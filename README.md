@@ -14,7 +14,7 @@
 
 // user input
 const asset quantity = asset{10000, symbol{"EOS", 4}};
-const uint64_t mid = 12; // EOS/USDT pair
+const uint64_t mid = 17; // EOS/USDT pair
 
 // get dfs info
 const auto [ reserve_in, reserve_out ] = dfs::get_reserves( mid, quantity.symbol );
@@ -46,7 +46,7 @@ Get reserves for a pair
 ### example
 
 ```c++
-const uint64_t mid = 12;
+const uint64_t mid = 17;
 const symbol sort = symbol{"EOS", 4};
 
 const auto [reserve0, reserve1] = dfs::get_reserves( mid, sort );

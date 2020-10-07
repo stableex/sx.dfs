@@ -63,7 +63,7 @@ namespace dfs {
      * ### example
      *
      * ```c++
-     * const uint64_t mid = 12;
+     * const uint64_t mid = 17;
      * const symbol sort = symbol{"EOS", 4};
      *
      * const auto [reserve0, reserve1] = dfs::get_reserves( mid, sort );
