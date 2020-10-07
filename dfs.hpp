@@ -1,6 +1,5 @@
 #pragma once
 
-#include <eosio/singleton.hpp>
 #include <eosio/asset.hpp>
 
 namespace dfs {
@@ -8,9 +7,6 @@ namespace dfs {
     using eosio::asset;
     using eosio::symbol;
     using eosio::name;
-    using eosio::singleton;
-    using eosio::multi_index;
-    using eosio::time_point_sec;
 
     /**
      * DFS markets
@@ -28,41 +24,6 @@ namespace dfs {
         uint64_t primary_key() const { return mid; }
     };
     typedef eosio::multi_index< "markets"_n, markets_row > markets;
-
-    // /**
-    //  * Defibox config
-    //  */
-    // struct [[eosio::table]] config_row {
-    //     uint8_t             status = 0;
-    //     uint64_t            pair_id = 663;
-    //     uint8_t             trade_fee = 20;
-    //     uint8_t             protocol_fee = 10;
-    //     name                fee_account = "fees.defi"_n;
-    // };
-    // typedef eosio::singleton< "config"_n, config_row > config;
-
-    // /**
-    //  * Defibox stakes
-    //  */
-    // struct [[eosio::table("stakes")]] stakes_row {
-    //     name            owner;
-    //     uint64_t        staked;
-    //     uint64_t        refunding;
-    //     time_point_sec  release_time;
-
-    //     uint64_t primary_key() const { return owner.value; }
-    // };
-    // typedef eosio::multi_index< "stakes"_n, stakes_row > stakes;
-
-    // /**
-    //  * Defibox stat
-    //  */
-    // struct [[eosio::table("stat")]] stat_row {
-    //     uint64_t            locked;
-    //     uint64_t            staked;
-    //     uint64_t            refunding;
-    // };
-    // typedef eosio::singleton< "stat"_n, stat_row > stat;
 
     /**
      * ## STATIC `get_fee`
@@ -83,9 +44,6 @@ namespace dfs {
     static uint8_t get_fee()
     {
         return 30;
-        // dfs::config _config( CONTRACT, CONTRACT.value );
-        // dfs::config_row config = _config.get_or_default();
-        // return config.trade_fee + config.protocol_fee;
     }
 
     /**

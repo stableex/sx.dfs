@@ -1,10 +1,10 @@
 #include <eosio/eosio.hpp>
-
 #include <sx.dfs/dfs.hpp>
 
-using namespace eosio;
+using eosio::print;
+using eosio::symbol;
 
-class [[eosio::contract]] basic : public contract {
+class [[eosio::contract]] basic : public eosio::contract {
 
 public:
     using contract::contract;
