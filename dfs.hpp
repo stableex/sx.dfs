@@ -25,6 +25,36 @@ namespace dfs {
     };
     typedef eosio::multi_index< "markets"_n, markets_row > markets;
 
+    // /**
+    //  * DFS votes
+    //  */
+    // struct [[eosio::table]] poolsvotes_row {
+    //     uint64_t            mid;
+    //     uint64_t            rank;
+    //     double_t            total_votes;
+
+    //     uint64_t primary_key() const { return mid; }
+    // };
+    // typedef eosio::multi_index< "pools"_n, poolsvotes_row > pools;
+
+    // /**
+    //  * DFS mining
+    //  */
+    // struct [[eosio::table]] poolslots_row {
+    //     uint64_t            rank;
+    //     double_t            default_distount;
+    //     double_t            lucky_distount;
+    //     double_t            pool_weight;
+    //     asset               trigger_value_max;
+    //     asset               daily_max_supply;
+    //     asset               daily_supply;
+    //     double_t            aprs;
+    //     double_t            dynamic_aprs;
+    //     time_point_sec      last_update;
+
+    //     uint64_t primary_key() const { return rank; }
+    // };
+    // typedef eosio::multi_index< "poolslots"_n, poolslots_row > poolslots;
     /**
      * ## STATIC `get_fee`
      *
@@ -81,5 +111,56 @@ namespace dfs {
         return sort == pairs.reserve0.symbol ?
             std::pair<asset, asset>{ pairs.reserve0, pairs.reserve1 } :
             std::pair<asset, asset>{ pairs.reserve1, pairs.reserve0 };
+    }
+
+    /**
+     * ## STATIC `get_rewards`
+     *
+     * Get rewards for trading
+     *
+     * ### params
+     *
+     * - `{uint64_t} pair_id` - pair id
+     * - `{asset} from` - tokens we are trading from
+     * - `{asset} to` - tokens we are trading to
+     *
+     * ### returns
+     *
+     * - {asset} = rewards in DFS
+     *
+     * ### example
+     *
+     * ```c++
+     * const uint64_t pair_id = 12;
+     * const asset from = asset{10000, {"EOS", 4}};
+     * const asset to = asset{12345, {"USDT", 4}};
+     *
+     * const auto rewards = dfs::get_rewards( pair_id, from, to);
+     * // rewards => "0.123456 DFS"
+     * ```
+     */
+    static asset get_rewards( const uint64_t pair_id, asset from, asset to )
+    {
+        asset res {0, symbol{"DFS",4}};
+        auto eos = from.symbol.code().to_string() == "EOS" ? from : to;
+        if(eos.symbol.code().to_string() != "EOS")
+            return res;     //return 0 if non-EOS pair
+
+        // //formula seems right but result doesn't match...
+        // dfs::pools _pools( "dfspoolsvote"_n, "dfspoolsvote"_n.value );
+        // auto poolit = _pools.find( pair_id );
+        // if(poolit==_pools.end()) return res;
+
+        // dfs::poolslots _slots( "miningpool11"_n, "miningpool11"_n.value );
+        // auto mineit = _slots.find( poolit->rank );
+        // if(mineit==_slots.end()) return res;
+
+
+        // float fee = eos.amount * 0.003;
+
+        ////for OGX: res.amount = 3000 * 0.452 * 0.75 * 0.1605 * 1.479;
+        //res.amount = fee * 0.452 * 0.75 * mineit->default_distount * mineit->pool_weight;
+
+        return res;
     }
 }
