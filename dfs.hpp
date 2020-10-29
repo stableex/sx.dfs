@@ -142,10 +142,11 @@ namespace dfs {
     static asset get_rewards( const uint64_t pair_id, asset from, asset to )
     {
         asset res {0, symbol{"DFS",4}};
-        auto eos = from.symbol.code().to_string() == "EOS" ? from : to;
-        if(eos.symbol.code().to_string() != "EOS")
+        auto eos = from.symbol.code() == symbol{"EOS"} ? from : to;
+        if(eos.symbol.code() != symbol{"EOS"})
             return res;     //return 0 if non-EOS pair
 
+        //return {};
         // //formula seems right but result doesn't match...
         // dfs::pools _pools( "dfspoolsvote"_n, "dfspoolsvote"_n.value );
         // auto poolit = _pools.find( pair_id );
