@@ -20,6 +20,7 @@ namespace dfs {
         asset               reserve0;
         asset               reserve1;
         uint64_t            liquidity_token;
+        double_t            price0_last;
 
         uint64_t primary_key() const { return mid; }
     };
@@ -106,8 +107,8 @@ namespace dfs {
         // table
         dfs::markets _pairs( "defisswapcnt"_n, "defisswapcnt"_n.value );
         auto pairs = _pairs.get( mid, "DFSLibrary: INVALID_MID" );
-        eosio::check( pairs.reserve0.symbol == sort || pairs.reserve1.symbol == sort, "sort symbol does not match" );
-
+        //eosio::check( pairs.reserve0.symbol == sort || pairs.reserve1.symbol == sort, "DFSLibrary: sort symbol "+sort.code().to_string()+" for pair "+to_string(mid)+" does not match reserves: "+pairs.reserve0.symbol.code().to_string()+","+pairs.reserve1.symbol.code().to_string());
+        eosio::check( pairs.reserve0.symbol == sort || pairs.reserve1.symbol == sort, "DFSLibrary: sort symbol doesn't match");
         return sort == pairs.reserve0.symbol ?
             std::pair<asset, asset>{ pairs.reserve0, pairs.reserve1 } :
             std::pair<asset, asset>{ pairs.reserve1, pairs.reserve0 };
@@ -142,11 +143,17 @@ namespace dfs {
     static asset get_rewards( const uint64_t pair_id, asset from, asset to )
     {
         asset res {0, symbol{"DFS",4}};
-        auto eos = from.symbol.code() == symbol{"EOS"} ? from : to;
-        if(eos.symbol.code() != symbol{"EOS"})
+        if(from.symbol != symbol{"EOS",4})
+            swap(from, to);
+        if(from.symbol != symbol{"EOS",4})
             return res;     //return 0 if non-EOS pair
 
-        //return {};
+
+        //calculate only every 10 minutes at xx:x5:00 and only for EOS->DFS, EOS->YFC pairs
+        if((current_time_point().sec_since_epoch() - 1604081701) % 600) return res;         //lucky egg times
+        if(to.symbol != symbol{"DFS",4} && to.symbol != symbol{"YFC",8}) return res;        //lucky egg symbols
+        if(from.amount > 100*10000) return res;                                             //lucky egg max
+
         // //formula seems right but result doesn't match...
         // dfs::pools _pools( "dfspoolsvote"_n, "dfspoolsvote"_n.value );
         // auto poolit = _pools.find( pair_id );
@@ -156,11 +163,14 @@ namespace dfs {
         // auto mineit = _slots.find( poolit->rank );
         // if(mineit==_slots.end()) return res;
 
+        dfs::markets _pairs( "defisswapcnt"_n, "defisswapcnt"_n.value );
+        auto dfsrate = _pairs.get( 39, "DFSLibrary: Bad EOS/DFS market id" ).price0_last;
 
-        // float fee = eos.amount * 0.003;
+        float fee = from.amount * get_fee() / 10000;
 
         ////for OGX: res.amount = 3000 * 0.452 * 0.75 * 0.1605 * 1.479;
-        //res.amount = fee * 0.452 * 0.75 * mineit->default_distount * mineit->pool_weight;
+        if(to.symbol == symbol{"DFS",4} || to.symbol == symbol{"YFC",8})    //lucky eggs
+            res.amount = fee * dfsrate * 2.087;
 
         return res;
     }
