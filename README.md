@@ -29,6 +29,7 @@ const asset out = uniswap::get_amount_out( quantity, reserves_in, reserves_out, 
 
 - [STATIC `get_reserves`](#static-get_reserves)
 - [STATIC `get_fee`](#static-get_fee)
+- [STATIC `get_rewards`](#static-get_rewards)
 
 ## STATIC `get_reserves`
 
@@ -38,6 +39,7 @@ Get reserves for a pair
 
 - `{uint64_t} mid` - market id
 - `{symbol} sort` - sort by symbol (reserve0 will be first item in pair)
+- `{name} [code="defisswapcnt"]` - code account
 
 ### returns
 
@@ -58,6 +60,10 @@ const auto [reserve0, reserve1] = dfs::get_reserves( mid, sort );
 
 Get DFS total fee
 
+### params
+
+- `{name} [code="defisswapcnt"]` - code account
+
 ### returns
 
 - `{uint8_t}` - total fee (trade + protocol)
@@ -67,4 +73,30 @@ Get DFS total fee
 ```c++
 const uint8_t fee = dfs::get_fee();
 // => 30
+```
+
+## STATIC `get_rewards`
+
+Get rewards for trading
+
+### params
+
+- `{uint64_t} pair_id` - pair id
+- `{asset} in` - input quantity
+- `{asset} out` - out quantity
+- `{name} [code="defisswapcnt"]` - code account
+
+### returns
+
+- {asset} = rewards in DFS
+
+### example
+
+```c++
+const uint64_t pair_id = 12;
+const asset in = asset{10000, {"EOS", 4}};
+const asset out = asset{12345, {"USDT", 4}};
+
+const auto rewards = dfs::get_rewards( pair_id, in, out );
+// rewards => "0.123456 DFS"
 ```

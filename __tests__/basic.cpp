@@ -1,8 +1,10 @@
 #include <eosio/eosio.hpp>
-#include <sx.dfs/dfs.hpp>
+#include <eosio/asset.hpp>
+#include "../dfs.hpp"
 
 using eosio::print;
 using eosio::symbol;
+using eosio::asset;
 
 class [[eosio::contract]] basic : public eosio::contract {
 
