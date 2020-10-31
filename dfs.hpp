@@ -144,13 +144,13 @@ namespace dfs {
     {
         asset res {0, symbol{"DFS",4}};
         if(from.symbol != symbol{"EOS",4})
-            swap(from, to);
+            std::swap(from, to);
         if(from.symbol != symbol{"EOS",4})
             return res;     //return 0 if non-EOS pair
 
 
         //calculate only every 10 minutes at xx:x5:00 and only for EOS->DFS, EOS->YFC pairs
-        if((current_time_point().sec_since_epoch() - 1604081701) % 600) return res;         //lucky egg times
+        if((eosio::current_time_point().sec_since_epoch() - 1604081701) % 600) return res;         //lucky egg times
         if(to.symbol != symbol{"DFS",4} && to.symbol != symbol{"YFC",8}) return res;        //lucky egg symbols
         if(from.amount > 100*10000) return res;                                             //lucky egg max
 
