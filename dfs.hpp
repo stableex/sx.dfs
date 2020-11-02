@@ -32,6 +32,19 @@ namespace dfs {
     };
     typedef eosio::multi_index< "markets"_n, markets_row > markets;
 
+    /**
+     * DFS eggs
+     */
+    struct [[eosio::table]] eggargs_row {
+        uint64_t            mid;
+        uint64_t            time_gap;
+        double_t            lucky_discount;
+        asset               trigger_value_max;
+
+        uint64_t primary_key() const { return mid; }
+    };
+    typedef eosio::multi_index< "eggargs"_n, eggargs_row > eggargs;
+
     // /**
     //  * DFS votes
     //  */
@@ -159,10 +172,9 @@ namespace dfs {
         if (in.symbol != symbol{"EOS",4}) std::swap(in, out);
         if (in.symbol != symbol{"EOS",4}) return res;     //return 0 if non-EOS pair
 
-        //calculate only every 10 minutes at xx:x5:00 and only for EOS->DFS, EOS->YFC pairs
-        if ((eosio::current_time_point().sec_since_epoch() - 1604081701) % 600) return res;      //lucky egg times
-        if (out.symbol != symbol{"DFS",4} && out.symbol != symbol{"YFC",8}) return res;          //lucky egg symbols
-        if (in.amount > 100 * 10000) return res;                                                 //lucky egg max
+        //calculate only every 5 minutes. Hack: return early on non-5 minutes.
+        auto now = (eosio::current_time_point().sec_since_epoch() - 1604081400);
+        if (now % 300) return res;      //lucky egg times
 
         // //formula seems right but result doesn't match...
         // dfs::pools _pools( "dfspoolsvote"_n, "dfspoolsvote"_n.value );
@@ -173,14 +185,18 @@ namespace dfs {
         // auto mineit = _slots.find( poolit->rank );
         // if(mineit==_slots.end()) return res;
 
+        dfs::eggargs _eggargs ("miningpool11"_n, "miningpool11"_n.value );
+        auto rowit = _eggargs.find(pair_id);
+        if(rowit == _eggargs.end()) return res;
+
+        if(now % rowit->time_gap * 60 || in > rowit->trigger_value_max) return res;
+
         dfs::markets _pairs( code, code.value );
         auto dfsrate = _pairs.get( 39, "DFSLibrary: Bad EOS/DFS market id" ).price0_last;
 
+        //non-working formula: https://github.com/defis-net/defis-network#mining-defis-network-mining-pools
         float fee = in.amount * get_fee() / 10000;
-
-        //lucky eggs
-        ////for OGX: res.amount = 3000 * 0.452 * 0.75 * 0.1605 * 1.479;
-        if (out.symbol == symbol{"DFS",4} || out.symbol == symbol{"YFC",8}) res.amount = fee * dfsrate * 2.087;
+        res.amount = fee * dfsrate * rowit->lucky_discount * 0.8;
 
         return res;
     }
