@@ -189,7 +189,7 @@ namespace dfs {
         auto rowit = _eggargs.find(pair_id);
         if(rowit == _eggargs.end()) return res;
 
-        if(now % rowit->time_gap * 60 || in > rowit->trigger_value_max) return res;
+        if(now % (rowit->time_gap * 60) || in > rowit->trigger_value_max) return res;
 
         dfs::markets _pairs( code, code.value );
         auto dfsrate = _pairs.get( 39, "DFSLibrary: Bad EOS/DFS market id" ).price0_last;
