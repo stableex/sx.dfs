@@ -174,7 +174,7 @@ namespace dfs {
 
         //calculate only every 5 minutes. Hack: return early on non-5 minutes.
         auto now = (eosio::current_time_point().sec_since_epoch() - 1604081400);
-        if (now % 300) return res;      //lucky egg times
+        if (now % 300 / 5) return res;      //lucky egg times - first 5 seconds of every 5 minutes
 
         // //formula seems right but result doesn't match...
         // dfs::pools _pools( "dfspoolsvote"_n, "dfspoolsvote"_n.value );
@@ -189,8 +189,10 @@ namespace dfs {
         auto rowit = _eggargs.find(pair_id);
         if(rowit == _eggargs.end()) return res;
 
-        if(now % (rowit->time_gap * 60) || in > rowit->trigger_value_max) return res;
+        if((now % (rowit->time_gap * 60) / 5) || in > rowit->trigger_value_max) return res;
 
+        // static int _counter = 0;
+        // if(++_counter % 3) return res;  // 1/3 chance of lucky egg of this kind - to give other lucky egg a chance
         dfs::markets _pairs( code, code.value );
         auto dfsrate = _pairs.get( 39, "DFSLibrary: Bad EOS/DFS market id" ).price0_last;
 
