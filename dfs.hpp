@@ -45,17 +45,17 @@ namespace dfs {
     };
     typedef eosio::multi_index< "eggargs"_n, eggargs_row > eggargs;
 
-    // /**
-    //  * DFS votes
-    //  */
-    // struct [[eosio::table]] poolsvotes_row {
-    //     uint64_t            mid;
-    //     uint64_t            rank;
-    //     double_t            total_votes;
+    /**
+     * DFS votes
+     */
+    struct [[eosio::table]] poolsvotes_row {
+        uint64_t            mid;
+        uint64_t            rank;
+        double_t            total_votes;
 
-    //     uint64_t primary_key() const { return mid; }
-    // };
-    // typedef eosio::multi_index< "pools"_n, poolsvotes_row > pools;
+        uint64_t primary_key() const { return mid; }
+    };
+    typedef eosio::multi_index< "pools"_n, poolsvotes_row > pools;
 
     // /**
     //  * DFS mining
@@ -168,38 +168,41 @@ namespace dfs {
      */
     static asset get_rewards( const uint64_t pair_id, asset in, asset out, const name code = "defisswapcnt"_n )
     {
-        asset res {0, symbol{"DFS",4}};
-        if (in.symbol != symbol{"EOS",4}) std::swap(in, out);
-        if (in.symbol != symbol{"EOS",4}) return res;     //return 0 if non-EOS pair
+        asset reward {0, symbol{"DFS",4}};
+        if (in.symbol != symbol{"EOS",4}) return reward;     //rewards only if EOS - incoming currency
 
-        //calculate only every 5 minutes. Hack: return early on non-5 minutes.
-        auto now = (eosio::current_time_point().sec_since_epoch() - 1604081400);
-        if (now % 300 / 5) return res;      //lucky egg times - first 5 seconds of every 5 minutes
+        float discount = 0.2;
+        //calculate only every 5 minutes. Return early on non-5 minutes.
+        auto now = (eosio::current_time_point().sec_since_epoch() - 1604081400 - 1);
+        if (now % 300 / 5 == 0) {   //lucky egg times - first 5 seconds of every 5 minutes
 
-        // //formula seems right but result doesn't match...
-        // dfs::pools _pools( "dfspoolsvote"_n, "dfspoolsvote"_n.value );
-        // auto poolit = _pools.find( pair_id );
-        // if(poolit==_pools.end()) return res;
+            dfs::eggargs _eggargs ("miningpool11"_n, "miningpool11"_n.value );
+            auto rowit = _eggargs.find(pair_id);
+            if(rowit == _eggargs.end()) return reward;
+
+            if((now % (rowit->time_gap * 60) / 5) || in > rowit->trigger_value_max) return reward;
+
+            discount = rowit->lucky_discount;
+        }
+        else {  //normal discount always 0.2 for ranked pools
+
+            dfs::pools _pools( "dfspoolsvote"_n, "dfspoolsvote"_n.value );
+            auto poolit = _pools.find( pair_id );
+            if(poolit==_pools.end() || poolit->rank==0 || poolit->rank>20) return reward;
+            //Also need to check if max supply exhausted for this rank but where?
+        }
 
         // dfs::poolslots _slots( "miningpool11"_n, "miningpool11"_n.value );
         // auto mineit = _slots.find( poolit->rank );
-        // if(mineit==_slots.end()) return res;
+        // if(mineit==_slots.end()) return reward;
 
-        dfs::eggargs _eggargs ("miningpool11"_n, "miningpool11"_n.value );
-        auto rowit = _eggargs.find(pair_id);
-        if(rowit == _eggargs.end()) return res;
-
-        if((now % (rowit->time_gap * 60) / 5) || in > rowit->trigger_value_max) return res;
-
-        // static int _counter = 0;
-        // if(++_counter % 3) return res;  // 1/3 chance of lucky egg of this kind - to give other lucky egg a chance
         dfs::markets _pairs( code, code.value );
         auto dfsrate = _pairs.get( 39, "DFSLibrary: Bad EOS/DFS market id" ).price0_last;
 
-        //non-working formula: https://github.com/defis-net/defis-network#mining-defis-network-mining-pools
+        // formula: https://github.com/defis-net/defis-network#mining-defis-network-mining-pools
         float fee = in.amount * get_fee() / 10000;
-        res.amount = fee * dfsrate * rowit->lucky_discount * 0.8;
+        reward.amount = fee * dfsrate * discount * 0.8;
 
-        return res;
+        return reward;
     }
 }
