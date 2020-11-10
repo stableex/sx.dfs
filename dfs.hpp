@@ -12,7 +12,8 @@ namespace dfs {
     using eosio::current_time_point;
 
     const name id = "dfs"_n;
-    const name exchange = "defisswapcnt"_n;
+    const name code = "defisswapcnt"_n;
+    const std::string description = "DFS Converter";
 
     /**
      * DFS markets
@@ -96,7 +97,7 @@ namespace dfs {
      * // => 30
      * ```
      */
-    static uint8_t get_fee( const name code = dfs::exchange )
+    static uint8_t get_fee( const name code = dfs::code )
     {
         return 30;
     }
@@ -127,7 +128,7 @@ namespace dfs {
      * // reserve1 => "12568203.3533 USDT"
      * ```
      */
-    static std::pair<asset, asset> get_reserves( const uint64_t mid, const symbol sort, const name code = "defisswapcnt"_n )
+    static std::pair<asset, asset> get_reserves( const uint64_t mid, const symbol sort, const name code = dfs::code )
     {
         // table
         dfs::markets _pairs( code, code.value );
@@ -166,14 +167,14 @@ namespace dfs {
      * // rewards => "0.123456 DFS"
      * ```
      */
-    static asset get_rewards( const uint64_t pair_id, asset in, asset out, const name code = "defisswapcnt"_n )
+    static asset get_rewards( const uint64_t pair_id, asset in, asset out, const name code = dfs::code )
     {
         asset reward {0, symbol{"DFS",4}};
         if (in.symbol != symbol{"EOS",4}) return reward;     //rewards only if EOS - incoming currency
 
         float discount = 0.2;
         //calculate only every 5 minutes. Return early on non-5 minutes.
-        auto now = (eosio::current_time_point().sec_since_epoch() - 1604081400 - 1);
+        auto now = (eosio::current_time_point().sec_since_epoch() - 1604081400);
         if (now % 300 / 5 == 0) {   //lucky egg times - first 5 seconds of every 5 minutes
 
             dfs::eggargs _eggargs ("miningpool11"_n, "miningpool11"_n.value );
