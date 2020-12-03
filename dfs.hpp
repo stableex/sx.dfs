@@ -167,6 +167,8 @@ namespace dfs {
      * // rewards => "0.123456 DFS"
      * ```
      */
+    static bool _lucky_egg = false;
+
     static asset get_rewards( const uint64_t pair_id, asset in, asset out, const name code = dfs::code )
     {
         asset reward {0, symbol{"DFS",4}};
@@ -184,6 +186,7 @@ namespace dfs {
             if((now % (rowit->time_gap * 60) / 5) || in > rowit->trigger_value_max) return reward;
 
             discount = rowit->lucky_discount;
+            _lucky_egg = true;
         }
         else {  //normal discount always 0.2 for ranked pools
 
@@ -192,10 +195,6 @@ namespace dfs {
             if(poolit==_pools.end() || poolit->rank==0 || poolit->rank>20) return reward;
             //Also need to check if max supply exhausted for this rank but where?
         }
-
-        // dfs::poolslots _slots( "miningpool11"_n, "miningpool11"_n.value );
-        // auto mineit = _slots.find( poolit->rank );
-        // if(mineit==_slots.end()) return reward;
 
         dfs::markets _pairs( code, code.value );
         auto dfsrate = _pairs.get( 39, "DFSLibrary: Bad EOS/DFS market id" ).price0_last;
