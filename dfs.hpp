@@ -9,11 +9,15 @@ namespace dfs {
     using eosio::asset;
     using eosio::symbol;
     using eosio::name;
-    using eosio::current_time_point;
+    using eosio::time_point_sec;
 
     const name id = "dfs"_n;
     const name code = "defisswapcnt"_n;
     const std::string description = "DFS Converter";
+
+    const uint64_t _lucky_time_gap = 10;        //lucky egg time gap in minutes
+    const uint64_t _lucky_seconds = 5;          //consider first {_lucky_seconds} seconds every {_lucky_time_gap} minutes as lucky
+    static bool _lucky_egg = false;             //set to true when we found lucky egg
 
     /**
      * DFS markets
@@ -34,7 +38,7 @@ namespace dfs {
     typedef eosio::multi_index< "markets"_n, markets_row > markets;
 
     /**
-     * DFS eggs
+     * DFS egg args
      */
     struct [[eosio::table]] eggargs_row {
         uint64_t            mid;
@@ -57,6 +61,19 @@ namespace dfs {
         uint64_t primary_key() const { return mid; }
     };
     typedef eosio::multi_index< "pools"_n, poolsvotes_row > pools;
+
+    /**
+     * DFS eggs
+     */
+    struct [[eosio::table]] eggs_row {
+        uint64_t            key;
+        name                owner;
+        asset               trade_value;
+        time_point_sec      time;
+
+        uint64_t primary_key() const { return key; }
+    };
+    typedef eosio::multi_index< "eggs"_n, eggs_row > eggs;
 
     // /**
     //  * DFS mining
@@ -140,6 +157,12 @@ namespace dfs {
             std::pair<asset, asset>{ pairs.reserve1, pairs.reserve0 };
     }
 
+    //lucky egg times - first 5 seconds of every 10 minutes
+    static bool is_lucky_time() {
+        auto now = eosio::current_time_point().sec_since_epoch();
+        return (now % (_lucky_time_gap * 60)) / _lucky_seconds == 0;
+    }
+
     /**
      * ## STATIC `get_rewards`
      *
@@ -167,33 +190,32 @@ namespace dfs {
      * // rewards => "0.123456 DFS"
      * ```
      */
-    static bool _lucky_egg = false;
 
     static asset get_rewards( const uint64_t pair_id, asset in, asset out, const name code = dfs::code )
     {
         asset reward {0, symbol{"DFS",4}};
         if (in.symbol != symbol{"EOS",4}) return reward;     //rewards only if EOS - incoming currency
 
+        //check if pool is ranked
+        dfs::pools _pools( "dfspoolsvote"_n, "dfspoolsvote"_n.value );
+        auto poolit = _pools.find( pair_id );
+        if(poolit==_pools.end() || poolit->rank==0 || poolit->rank>20) return reward;
+
+        //default reward fee discount for ranked pools
         float discount = 0.2;
-        //calculate only every 5 minutes. Return early on non-5 minutes.
-        auto now = (eosio::current_time_point().sec_since_epoch() - 1604081400);
-        if (now % 300 / 5 == 0) {   //lucky egg times - first 5 seconds of every 5 minutes
+        if (is_lucky_time()) {
 
             dfs::eggargs _eggargs ("miningpool11"_n, "miningpool11"_n.value );
             auto rowit = _eggargs.find(pair_id);
-            if(rowit == _eggargs.end()) return reward;
+            if(rowit != _eggargs.end() && in <= rowit->trigger_value_max) {
 
-            if((now % (rowit->time_gap * 60) / 5) || in > rowit->trigger_value_max) return reward;
-
-            discount = rowit->lucky_discount;
-            _lucky_egg = true;
-        }
-        else {  //normal discount always 0.2 for ranked pools
-
-            dfs::pools _pools( "dfspoolsvote"_n, "dfspoolsvote"_n.value );
-            auto poolit = _pools.find( pair_id );
-            if(poolit==_pools.end() || poolit->rank==0 || poolit->rank>20) return reward;
-            //Also need to check if max supply exhausted for this rank but where?
+                dfs::eggs _eggs ("miningpool11"_n, rowit->mid );   //check if the egg was already taken
+                auto last_egg = _eggs.rbegin();
+                if(last_egg != _eggs.rend() && eosio::current_time_point().sec_since_epoch() - last_egg->time.sec_since_epoch() > _lucky_seconds ) {
+                    discount = rowit->lucky_discount;
+                    _lucky_egg = true;
+                }
+            }
         }
 
         dfs::markets _pairs( code, code.value );
@@ -201,7 +223,7 @@ namespace dfs {
 
         // formula: https://github.com/defis-net/defis-network#mining-defis-network-mining-pools
         float fee = in.amount * get_fee() / 10000;
-        reward.amount = fee * dfsrate * discount * 0.8;
+        reward.amount = fee * dfsrate * discount * 0.8 * 1.04;  //extra 4% for invite code
 
         return reward;
     }
