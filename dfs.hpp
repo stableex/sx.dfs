@@ -15,7 +15,7 @@ namespace dfs {
     const name code = "defisswapcnt"_n;
     const std::string description = "DFS Converter";
 
-    const uint64_t _lucky_time_gap = 4;         //lucky egg time gap in minutes
+    const uint64_t _lucky_time_gap = 5;         //lucky egg time gap in minutes
     const uint64_t _lucky_seconds = 10;         //consider first {_lucky_seconds} seconds every {_lucky_time_gap} minutes as lucky
     static bool _lucky_egg = false;             //set to true when we found lucky egg
 
