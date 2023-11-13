@@ -11,12 +11,12 @@ namespace dfs {
     using eosio::name;
     using eosio::time_point_sec;
 
-    const name id = "dfs"_n;
-    const name code = "defisswapcnt"_n;
+    constexpr name id = "dfs"_n;
+    constexpr name code = "defisswapcnt"_n;
     const std::string description = "DFS Converter";
 
-    const uint64_t _lucky_time_gap = 5;         //lucky egg time gap in minutes
-    const uint64_t _lucky_seconds = 10;         //consider first {_lucky_seconds} seconds every {_lucky_time_gap} minutes as lucky
+    constexpr uint64_t _lucky_time_gap = 5;         //lucky egg time gap in minutes
+    constexpr uint64_t _lucky_seconds = 10;         //consider first {_lucky_seconds} seconds every {_lucky_time_gap} minutes as lucky
     static bool _lucky_egg = false;             //set to true when we found lucky egg
 
     /**
@@ -150,8 +150,8 @@ namespace dfs {
         // table
         dfs::markets _pairs( code, code.value );
         auto pairs = _pairs.get( mid, "DFSLibrary: INVALID_MID" );
-        //eosio::check( pairs.reserve0.symbol == sort || pairs.reserve1.symbol == sort, "DFSLibrary: sort symbol "+sort.code().to_string()+" for pair "+to_string(mid)+" does not match reserves: "+pairs.reserve0.symbol.code().to_string()+","+pairs.reserve1.symbol.code().to_string());
-        eosio::check( pairs.reserve0.symbol == sort || pairs.reserve1.symbol == sort, "DFSLibrary: sort symbol doesn't match");
+        eosio::check( pairs.reserve0.symbol == sort || pairs.reserve1.symbol == sort, "DFSLibrary: sort symbol "+sort.code().to_string()+" for pair "+std::to_string(mid)+" does not match reserves: "+pairs.reserve0.symbol.code().to_string()+","+pairs.reserve1.symbol.code().to_string());
+        //eosio::check( pairs.reserve0.symbol == sort || pairs.reserve1.symbol == sort, "DFSLibrary: sort symbol doesn't match");
         return sort == pairs.reserve0.symbol ?
             std::pair<asset, asset>{ pairs.reserve0, pairs.reserve1 } :
             std::pair<asset, asset>{ pairs.reserve1, pairs.reserve0 };
@@ -195,14 +195,14 @@ namespace dfs {
     {
         asset reward {0, symbol{"DFS",4}};
         if (in.symbol != symbol{"EOS",4}) return reward;     //rewards only if EOS - incoming currency
-
+return reward;  //no more rewards on DFS?
         //check if pool is ranked
         dfs::pools _pools( "dfspoolsvote"_n, "dfspoolsvote"_n.value );
         auto poolit = _pools.find( pair_id );
         if(poolit==_pools.end() || poolit->rank==0 || poolit->rank>20) return reward;
 
         //default reward fee discount for ranked pools
-        float discount = 0.2;
+        double_t discount = 0.2;
         if (is_lucky_time()) {
 
             dfs::eggargs _eggargs ("miningpool11"_n, "miningpool11"_n.value );
@@ -217,13 +217,14 @@ namespace dfs {
                 }
             }
         }
+        if(discount == 0.2) return reward;
 
         dfs::markets _pairs( code, code.value );
         auto dfsrate = _pairs.get( 39, "DFSLibrary: Bad EOS/DFS market id" ).price0_last;
 
         // formula: https://github.com/defis-net/defis-network#mining-defis-network-mining-pools
         float fee = in.amount * get_fee() / 10000;
-        reward.amount = fee * dfsrate * discount * 0.8 * 1.04;  //extra 4% for invite code
+        reward.amount = fee * dfsrate * discount * 0.8;// * 1.04;  //extra 4% for invite code
 
         return reward;
     }
